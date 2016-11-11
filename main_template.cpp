@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <time.h>
 #include <random>
+#include <future>
+#include <functional>
+#include <chrono>
 
 template<typename T>
 inline int comparator(const T &a, const T &b) noexcept{
@@ -31,7 +34,37 @@ void qSort(const F &comparator, T *a, int left, int right){
 
 template<typename F, typename T>
 void qSortSimpleParallel(const F &comparator, T *a, int left, int right){
-	//---- ????? ----
+	int l = left,
+		r = right;
+	T b = a[left + (right-left)/2];
+	while(l<=r){
+		while(comparator(a[l], b) < 0) l++;
+		while(comparator(a[r], b) > 0) r--;
+
+		if (l <= r){
+			std::swap(a[l], a[r]);
+			l++; r--;
+		}
+	}
+
+	static std::atomic<int> threadCounter(std::thread::hardware_concurrency()-1);
+	std::thread thread;
+	if (left < r){
+		if (r - left > 256 && threadCounter > 0){
+			threadCounter--;
+
+			thread = std::thread(qSortSimpleParallel<F, T>, std::ref(comparator), a, left, r);
+		}
+		else{
+			qSortSimpleParallel(comparator, a, left, r);
+		}
+	}
+	if (l < right) qSortSimpleParallel(comparator, a, l, right);
+
+	if (thread.joinable()){
+		thread.join();
+		threadCounter++;
+	}
 }
 
 void print_a(const char *prefix, const double *a, int N, int tail = 0){
@@ -57,21 +90,22 @@ void print_a(const char *prefix, const double *a, int N, int tail = 0){
 }
 
 double timer(){
-	static clock_t start = 0;
-	if (!start){
-		start = clock();
+	static char is = 0;
+	static std::chrono::time_point<std::chrono::high_resolution_clock> start;
+	if (!is){
+		is = 1;
+		start = std::chrono::high_resolution_clock::now();
 		return 0;
 	}
-
-	clock_t end = clock();
-	double ret  = (double)(end-start)/CLOCKS_PER_SEC;
+	auto end = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> diff = end-start;
 	start = end;
-	return ret;
+	return diff.count();
 }
 
 void randomize(double *a, int N){
 	std::random_device rd;
-    std::srand(rd());
+    	std::srand(rd());
 
 	for(int i=0; i<N; ++i){
 		a[i] = (double)(std::rand())/RAND_MAX;
