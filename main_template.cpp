@@ -7,6 +7,7 @@
 #include <future>
 #include <functional>
 #include <chrono>
+#include "ii_queue.h"
 
 template<typename T>
 inline int comparator(const T &a, const T &b) noexcept{
@@ -227,5 +228,7 @@ int main(int argc, char *argv[]){
 	print_a("Sorted(A)", a, N);
 
 	delete[] a;
+	
+	getchar();
 	return EXIT_SUCCESS;
 }
