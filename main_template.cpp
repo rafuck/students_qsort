@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+	#include "stdafx.h"
+#endif
+#include <atomic>
 #include <cstdlib>
 #include <cstdio>
 #include <thread>
@@ -10,7 +14,7 @@
 #include "ii_queue.h"
 
 template<typename T>
-inline int comparator(const T &a, const T &b) noexcept{
+inline int comparator(const T &a, const T &b){
 	return (a < b) ? -1 : ((a > b) ? 1 : 0);
 }
 
@@ -76,8 +80,8 @@ private:
 	int N;
 	const F &comparator;
 
-	IIQueue<std::packaged_task<void()>> taskQueue;
-	std::function<void(int, int)> sortMethod;
+	IIQueue<std::packaged_task<int()>> taskQueue;
+	std::function<int(int, int)> sortMethod;
 	
 	// May be some code here ------- ???? ---------
 
@@ -94,7 +98,7 @@ private:
 		}
 	}
 
-	void _qSort(int left, int right){
+	int _qSort(int left, int right){
 		int l = left,
 			r = right;
 		T b = a[left + (right-left)/2];
@@ -120,6 +124,8 @@ private:
 		if (left < r ){
 			_qSort(left, r );
 		}
+		
+		return 0;
 	}
 public:
 	QSortThreadPool(const F &_comparator):comparator(_comparator){
@@ -145,7 +151,7 @@ public:
 	~QSortThreadPool(){
 		const size_t nCores = std::thread::hardware_concurrency();
 		for(int i=0; i<nCores; ++i){
-			std::packaged_task<void()> task;
+			std::packaged_task<int()> task;
 			taskQueue.push(std::move(task));
 		}
 
@@ -208,7 +214,7 @@ int main(int argc, char *argv[]){
 	const int N = 32*1024*1024;
 	double *a = new double[N];
 	
-	randomize(a, N);	
+	/*randomize(a, N);	
 	timer();
 	qSort(comparator<double>, a, 0, N-1);
 	printf("Sorted at %1.9lf seconds", timer());
@@ -218,7 +224,7 @@ int main(int argc, char *argv[]){
 	timer();
 	qSortSimpleParallel(comparator<double>, a, 0, N-1);
 	printf("\nSimple parallel sorted at %1.9lf seconds", timer());
-	print_a("Sorted(A)", a, N);
+	print_a("Sorted(A)", a, N);*/
 	
 	randomize(a, N);
 	QSortThreadPool<int(const double&, const double&), double> sorter(comparator<double>);
