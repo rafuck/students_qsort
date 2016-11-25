@@ -38,7 +38,7 @@ void qSort(const F &comparator, T *a, int left, int right){
 }
 
 template<typename F, typename T>
-void qSortSimpleParallel(const F &comparator, T *a, int left, int right){
+void qSortSimpleParallel(F comparator, T *a, int left, int right){
 	int l = left,
 		r = right;
 	T b = a[left + (right-left)/2];
@@ -58,7 +58,7 @@ void qSortSimpleParallel(const F &comparator, T *a, int left, int right){
 		if (r - left > 256 && threadCounter > 0){
 			threadCounter--;
 
-			thread = std::thread(qSortSimpleParallel<F, T>, std::ref(comparator), a, left, r);
+			thread = std::thread(qSortSimpleParallel<F, T>, comparator, a, left, r);
 		}
 		else{
 			qSortSimpleParallel(comparator, a, left, r);
