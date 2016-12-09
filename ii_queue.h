@@ -45,5 +45,63 @@ public:
 	}
 };
 
+class CQueueCond{
+private:
+	std::mutex _wait;
+	std::atomic<int> _counter;
+public:
+	CQueueCond():_counter(0){
+		_wait.lock();
+	}
+
+	void wait(){
+		if ((_counter--) > 0){
+			return;
+		}
+		else{
+			_counter++;
+		}
+
+		_wait.lock();
+		if ((_counter--) > 1){
+			_wait.unlock();
+		}
+	}
+
+	void notify(){
+		if ((_counter++) < 1){
+			_wait.unlock();
+		}
+	}
+};
+
+template <typename T>
+class IIQueueMutex{
+private:
+	std::queue<T> _q;
+	std::mutex _lock;
+	CQueueCond _wait;
+public:
+	void push(T item){
+		std::lock_guard<std::mutex> lk(_lock);
+		_q.push(std::move(item));
+		_wait.notify();
+	}
+
+	T wait(){
+		_wait.wait();
+		{
+			std::lock_guard<std::mutex> lk(_lock);
+			if (!_q.empty()){
+				T ret = std::move(_q.front());
+				_q.pop();
+				return std::move(ret);
+			}
+		}
+
+		return wait();
+	}
+};
+
 //--------------------------------------------------------------------
 #endif
