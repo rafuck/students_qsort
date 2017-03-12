@@ -19,7 +19,7 @@ public:
 
 		T ret = std::move(q.front());
 		q.pop();
-		return std::move(ret);
+		return ret;
 	}
 
 	bool try_pop(T &item){
@@ -95,7 +95,7 @@ public:
 			if (!_q.empty()){
 				T ret = std::move(_q.front());
 				_q.pop();
-				return std::move(ret);
+				return ret;
 			}
 		}
 
